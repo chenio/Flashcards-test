@@ -1,4 +1,4 @@
-# test
+# Flashcards-test
 This is a first code try for creating an app about Flash Cards for students.
 Quite simple:
 - You have Next, Previous and Home buttons
