@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards App</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        .flashcard { display: none; padding: 20px; border: 2px solid #333; border-radius: 10px; background: #fff; cursor: pointer; }
+        .buttons { margin-top: 20px; }
+        button { padding: 10px; margin: 5px; border: none; background: #007BFF; color: white; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input[type="file"] { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Flashcards App</h1>
+        <div class="flashcard" id="flashcard" onclick="toggleAnswer()">
+            <p id="card-text">Haz clic para ver la respuesta</p>
+            <p id="card-explanation" style="display:none; font-size: 0.9em; color: gray;"></p>
+        </div>
+        <div class="buttons">
+            <button onclick="prevCard()">Anterior</button>
+            <button onclick="nextCard()">Siguiente</button>
+            <button onclick="addFlashcard()">Añadir Flashcard</button>
+            <button onclick="home()">Home</button>
+            <button onclick="downloadTemplate()">Descargar Plantilla</button>
+            <input type="file" id="importFile" accept=".csv" onchange="importFlashcards(event)">
+        </div>
+    </div>
+    <script>
+        const flashcards = JSON.parse(localStorage.getItem("flashcards")) || [];
+        let currentIndex = 0, showAnswer = false;
+        const flashcardEl = document.getElementById("flashcard"), textEl = document.getElementById("card-text"), explanationEl = document.getElementById("card-explanation");
+
+        const updateFlashcard = () => {
+            if (flashcards.length) {
+                showAnswer = false;
+                flashcardEl.style.display = "block";
+                textEl.textContent = flashcards[currentIndex].question;
+                explanationEl.style.display = "none";
+            } else flashcardEl.style.display = "none";
+        };
+
+        const toggleAnswer = () => {
+            if (flashcards.length) {
+                showAnswer = !showAnswer;
+                textEl.textContent = showAnswer ? flashcards[currentIndex].answer : flashcards[currentIndex].question;
+                explanationEl.textContent = showAnswer && flashcards[currentIndex].explanation || "";
+                explanationEl.style.display = showAnswer ? "block" : "none";
+            }
+        };
+
+        const nextCard = () => { if (flashcards.length) { currentIndex = (currentIndex + 1) % flashcards.length; updateFlashcard(); } };
+        const prevCard = () => { if (flashcards.length) { currentIndex = (currentIndex - 1 + flashcards.length) % flashcards.length; updateFlashcard(); } };
+        const home = () => { currentIndex = 0; updateFlashcard(); };
+        
+        const addFlashcard = () => {
+            const question = prompt("Ingresa la pregunta:"), answer = prompt("Ingresa la respuesta:"), explanation = prompt("Ingresa una explicación opcional:") || "";
+            if (question && answer) {
+                flashcards.push({ question, answer, explanation });
+                localStorage.setItem("flashcards", JSON.stringify(flashcards));
+                updateFlashcard();
+            }
+        };
+
+        const downloadTemplate = () => {
+            const csvContent = "Question,Answer,Explanation\n";
+            const blob = new Blob([csvContent], { type: "text/csv" });
+            const link = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "flashcards_template.csv" });
+            link.click();
+        };
+
+        const importFlashcards = event => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const lines = e.target.result.split("\n").slice(1);
+                lines.forEach(line => {
+                    const [question, answer, explanation] = line.split(",");
+                    if (question && answer) flashcards.push({ question, answer, explanation: explanation || "" });
+                });
+                localStorage.setItem("flashcards", JSON.stringify(flashcards));
+                updateFlashcard();
+            };
+            reader.readAsText(file);
+        };
+
+        updateFlashcard();
+    </script>
+</body>
+</html>
